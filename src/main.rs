@@ -1,8 +1,9 @@
-use crate::git_backend::GitLogWalker;
 use clap::{Parser, ValueEnum};
-use git2::Repository;
+use git_backend::GitLogWalker;
+use gix_backend::GixLogWalker;
 
 mod git_backend;
+mod gix_backend;
 
 #[derive(Clone, Debug, ValueEnum)]
 enum Library {
@@ -34,7 +35,7 @@ fn main() {
     match args.cmd {
         Subcommands::Log { library } => match library {
             Library::Git => {
-                let repo = Repository::open_from_env().unwrap();
+                let repo = git2::Repository::open_from_env().unwrap();
 
                 println!(
                     "walking the history of {workdir:?}, counting the number of cs in commit ids",
@@ -62,7 +63,38 @@ fn main() {
                 println!("number of commits traversed: {number_of_commits}");
                 println!("number of cs in all commit ids traversed: {number_of_cs}");
             }
-            Library::Gix => todo!(),
+            Library::Gix => {
+                let mut repo: gix::Repository =
+                    gix::ThreadSafeRepository::discover_with_environment_overrides(".")
+                        .map(Into::into)
+                        .unwrap();
+
+                println!(
+                    "walking the history of {workdir:?}, counting the number of cs in commit ids",
+                    workdir = repo.work_dir().unwrap()
+                );
+
+                let mut walker = GixLogWalker::new(&mut repo);
+                let mut commits = Vec::new();
+                let mut number_of_commits = 0;
+                let mut number_of_cs = 0;
+
+                while walker.read(&mut commits) > 0 {
+                    number_of_commits += commits.iter().count();
+                    number_of_cs += commits.iter().fold(0, |acc, commit| {
+                        acc + commit
+                            .to_string()
+                            .chars()
+                            .filter(|char| *char == 'c')
+                            .count()
+                    });
+
+                    commits.clear();
+                }
+
+                println!("number of commits traversed: {number_of_commits}");
+                println!("number of cs in all commit ids traversed: {number_of_cs}");
+            }
         },
     }
 }
