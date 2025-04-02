@@ -1,6 +1,7 @@
 use backend::LogWalker;
 use clap::{Parser, ValueEnum};
 use git_backend::GitLogWalker;
+use git2::opts::{strict_hash_verification, strict_object_creation};
 use gix_backend::GixLogWalker;
 
 mod backend;
@@ -59,6 +60,10 @@ fn main() {
     match args.cmd {
         Subcommands::Log { library } => match library {
             Library::Git => {
+                // This makes `git2` as fast as possible.
+                strict_object_creation(false);
+                strict_hash_verification(false);
+
                 let repo = git2::Repository::open_from_env().unwrap();
 
                 println!(
