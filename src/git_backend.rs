@@ -5,6 +5,8 @@ use std::{
 
 use git2::{Commit, Oid, Repository};
 
+use crate::LogWalker;
+
 /// This is a simplified version of:
 /// https://github.com/gitui-org/gitui/blob/156381155e12d89b39e657f07c8dac557271d24f/asyncgit/src/sync/logwalker.rs
 
@@ -48,7 +50,15 @@ impl<'a> GitLogWalker<'a> {
         }
     }
 
-    pub fn read(&mut self, out: &mut Vec<Oid>) -> usize {
+    fn visit(&mut self, commit: Commit<'a>) {
+        if self.visited.insert(commit.id()) {
+            self.commits.push(TimeOrderedCommit(commit));
+        }
+    }
+}
+
+impl LogWalker<Oid> for GitLogWalker<'_> {
+    fn read(&mut self, out: &mut Vec<Oid>) -> usize {
         let mut count = 0_usize;
 
         while let Some(commit) = self.commits.pop() {
@@ -62,11 +72,5 @@ impl<'a> GitLogWalker<'a> {
         }
 
         count
-    }
-
-    fn visit(&mut self, commit: Commit<'a>) {
-        if self.visited.insert(commit.id()) {
-            self.commits.push(TimeOrderedCommit(commit));
-        }
     }
 }

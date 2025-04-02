@@ -1,7 +1,9 @@
+use backend::LogWalker;
 use clap::{Parser, ValueEnum};
 use git_backend::GitLogWalker;
 use gix_backend::GixLogWalker;
 
+mod backend;
 mod git_backend;
 mod gix_backend;
 
@@ -29,6 +31,28 @@ struct Args {
     pub cmd: Subcommands,
 }
 
+fn walk_log_and_count_letters<Id: ToString>(mut walker: impl LogWalker<Id>) {
+    let mut commits = Vec::new();
+    let mut number_of_commits = 0;
+    let mut number_of_cs = 0;
+
+    while walker.read(&mut commits) > 0 {
+        number_of_commits += commits.iter().count();
+        number_of_cs += commits.iter().fold(0, |acc, commit| {
+            acc + commit
+                .to_string()
+                .chars()
+                .filter(|char| *char == 'c')
+                .count()
+        });
+
+        commits.clear();
+    }
+
+    println!("number of commits traversed: {number_of_commits}");
+    println!("number of cs in all commit ids traversed: {number_of_cs}");
+}
+
 fn main() {
     let args: Args = Args::parse_from(std::env::args_os());
 
@@ -38,30 +62,13 @@ fn main() {
                 let repo = git2::Repository::open_from_env().unwrap();
 
                 println!(
-                    "walking the history of {workdir:?}, counting the number of cs in commit ids",
+                    "using `git2` to walk the history of {workdir:?}, counting the number of cs in commit ids",
                     workdir = repo.workdir().unwrap()
                 );
 
-                let mut walker = GitLogWalker::new(&repo);
-                let mut commits = Vec::new();
-                let mut number_of_commits = 0;
-                let mut number_of_cs = 0;
+                let walker = GitLogWalker::new(&repo);
 
-                while walker.read(&mut commits) > 0 {
-                    number_of_commits += commits.iter().count();
-                    number_of_cs += commits.iter().fold(0, |acc, commit| {
-                        acc + commit
-                            .to_string()
-                            .chars()
-                            .filter(|char| *char == 'c')
-                            .count()
-                    });
-
-                    commits.clear();
-                }
-
-                println!("number of commits traversed: {number_of_commits}");
-                println!("number of cs in all commit ids traversed: {number_of_cs}");
+                walk_log_and_count_letters(walker);
             }
             Library::Gix => {
                 let mut repo: gix::Repository =
@@ -70,30 +77,13 @@ fn main() {
                         .unwrap();
 
                 println!(
-                    "walking the history of {workdir:?}, counting the number of cs in commit ids",
+                    "using `gix` to walk the history of {workdir:?}, counting the number of cs in commit ids",
                     workdir = repo.work_dir().unwrap()
                 );
 
-                let mut walker = GixLogWalker::new(&mut repo);
-                let mut commits = Vec::new();
-                let mut number_of_commits = 0;
-                let mut number_of_cs = 0;
+                let walker = GixLogWalker::new(&mut repo);
 
-                while walker.read(&mut commits) > 0 {
-                    number_of_commits += commits.iter().count();
-                    number_of_cs += commits.iter().fold(0, |acc, commit| {
-                        acc + commit
-                            .to_string()
-                            .chars()
-                            .filter(|char| *char == 'c')
-                            .count()
-                    });
-
-                    commits.clear();
-                }
-
-                println!("number of commits traversed: {number_of_commits}");
-                println!("number of cs in all commit ids traversed: {number_of_cs}");
+                walk_log_and_count_letters(walker);
             }
         },
     }

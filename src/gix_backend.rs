@@ -1,5 +1,7 @@
 use gix::{ObjectId, Repository, revision::Walk};
 
+use crate::LogWalker;
+
 /// This is a simplified version of:
 /// https://github.com/gitui-org/gitui/blob/156381155e12d89b39e657f07c8dac557271d24f/asyncgit/src/sync/logwalker.rs
 
@@ -28,8 +30,10 @@ impl<'a> GixLogWalker<'a> {
 
         Self { walk }
     }
+}
 
-    pub fn read(&mut self, out: &mut Vec<ObjectId>) -> usize {
+impl LogWalker<ObjectId> for GixLogWalker<'_> {
+    fn read(&mut self, out: &mut Vec<ObjectId>) -> usize {
         let mut count = 0_usize;
 
         while let Some(Ok(info)) = self.walk.next() {
