@@ -1,0 +1,81 @@
+From 7636e720a5e651a4377103d529a67214c8f9b356 Mon Sep 17 00:00:00 2001
+From: Naseschwarz <naseschwarz@0x53a.de>
+Date: Thu, 3 Apr 2025 17:37:26 +0200
+Subject: [PATCH] Benchmark git rev-list
+
+---
+ builtin/rev-list.c | 18 ++++++++++++++++--
+ 1 file changed, 16 insertions(+), 2 deletions(-)
+
+diff --git a/builtin/rev-list.c b/builtin/rev-list.c
+index bb26bee0d4..eec39c6f2a 100644
+--- a/builtin/rev-list.c
++++ b/builtin/rev-list.c
+@@ -195,11 +195,13 @@ static void finish_commit(struct commit *commit)
+ 			   commit);
+ }
+ 
++uint32_t num_of_cs = 0;
++
+ static void show_commit(struct commit *commit, void *data)
+ {
+ 	struct rev_list_info *info = data;
+ 	struct rev_info *revs = info->revs;
+-
++#if 0
+ 	display_progress(progress, ++progress_counter);
+ 
+ 	if (revs->do_not_die_on_missing_objects &&
+@@ -215,7 +217,6 @@ static void show_commit(struct commit *commit, void *data)
+ 		finish_commit(commit);
+ 		return;
+ 	}
+-
+ 	graph_show_commit(revs->graph);
+ 
+ 	if (revs->count) {
+@@ -233,7 +234,15 @@ static void show_commit(struct commit *commit, void *data)
+ 		printf("%"PRItime" ", commit->date);
+ 	if (info->header_prefix)
+ 		fputs(info->header_prefix, stdout);
++#endif
+ 
++	char * hex = oid_to_hex(&commit->object.oid);
++	while (*hex) {
++		if (*hex == 'c')
++			num_of_cs++;
++		hex++;
++	}
++#if 0
+ 	if (revs->include_header) {
+ 		if (!revs->graph)
+ 			fputs(get_revision_mark(revs, commit), stdout);
+@@ -243,6 +252,8 @@ static void show_commit(struct commit *commit, void *data)
+ 		else
+ 			fputs(oid_to_hex(&commit->object.oid), stdout);
+ 	}
++#endif
++#if 0
+ 	if (revs->print_parents) {
+ 		struct commit_list *parents = commit->parents;
+ 		while (parents) {
+@@ -318,6 +329,7 @@ static void show_commit(struct commit *commit, void *data)
+ 	}
+ 	maybe_flush_or_die(stdout, "stdout");
+ 	finish_commit(commit);
++#endif
+ }
+ 
+ static int finish_object(struct object *obj, const char *name, void *cb_data)
+@@ -897,6 +909,8 @@ int cmd_rev_list(int argc,
+ 	if (show_disk_usage)
+ 		print_disk_usage(total_disk_usage);
+ 
++	printf("%"PRIu32"\n", num_of_cs);
++
+ cleanup:
+ 	release_revisions(&revs);
+ 	return ret;
+-- 
+2.49.0
+
