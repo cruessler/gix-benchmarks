@@ -23,6 +23,14 @@ enum Subcommands {
         #[arg(value_enum)]
         library: Library,
     },
+    /// Benchmark blaming a single file.
+    Blame {
+        #[arg(value_enum)]
+        library: Library,
+
+        #[arg(long)]
+        path: String,
+    },
 }
 
 #[derive(Debug, clap::Parser)]
@@ -83,12 +91,53 @@ fn main() {
 
                 println!(
                     "using `gix` to walk the history of {workdir:?}, counting the number of cs in commit ids",
-                    workdir = repo.work_dir().unwrap()
+                    workdir = repo.workdir().unwrap()
                 );
 
                 let walker = GixLogWalker::new(&mut repo);
 
                 walk_log_and_count_letters(walker);
+            }
+        },
+        Subcommands::Blame { library, path } => match library {
+            Library::Git => todo!(),
+            Library::Gix => {
+                let repo: gix::Repository =
+                    gix::ThreadSafeRepository::discover_with_environment_overrides(".")
+                        .map(Into::into)
+                        .unwrap();
+
+                println!(
+                    "using `gix` to get blame for {path:?} (in {workdir:?})",
+                    workdir = repo.workdir().unwrap()
+                );
+
+                let head_id: gix::ObjectId =
+                    repo.head().unwrap().peel_to_commit_in_place().unwrap().id;
+
+                let cache: Option<gix::commitgraph::Graph> =
+                    repo.commit_graph_if_enabled().unwrap();
+                let mut resource_cache = repo.diff_resource_cache_for_tree_diff().unwrap();
+
+                let diff_algorithm = repo.diff_algorithm().unwrap();
+
+                let options = gix_blame::Options {
+                    diff_algorithm,
+                    range: None,
+                    since: None,
+                };
+
+                let outcome = gix_blame::file(
+                    &repo.objects,
+                    head_id.into(),
+                    cache,
+                    &mut resource_cache,
+                    (&path as &str).into(),
+                    options,
+                )
+                .unwrap();
+
+                println!("got {len} blame entries", len = outcome.entries.len());
             }
         },
     }
