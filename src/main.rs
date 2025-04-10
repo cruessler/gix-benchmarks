@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use backend::LogWalker;
 use clap::{Parser, ValueEnum};
 use git_backend::GitLogWalker;
@@ -100,7 +102,23 @@ fn main() {
             }
         },
         Subcommands::Blame { library, path } => match library {
-            Library::Git => todo!(),
+            Library::Git => {
+                let repo = git2::Repository::open_from_env().unwrap();
+
+                println!(
+                    "using `git2` to get blame for {path:?} (in {workdir:?})",
+                    workdir = repo.workdir().unwrap()
+                );
+
+                let commit = repo.head().unwrap().peel_to_commit().unwrap();
+
+                let mut opts = git2::BlameOptions::new();
+                opts.newest_commit(commit.id());
+
+                let blame = repo.blame_file(Path::new(&path), Some(&mut opts)).unwrap();
+
+                println!("got {len} blame entries", len = blame.len());
+            }
             Library::Gix => {
                 let repo: gix::Repository =
                     gix::ThreadSafeRepository::discover_with_environment_overrides(".")
