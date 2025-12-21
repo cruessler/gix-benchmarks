@@ -48,7 +48,7 @@ fn walk_log_and_count_letters<Id: ToString>(mut walker: impl LogWalker<Id>) {
     let mut number_of_cs = 0;
 
     while walker.read(&mut commits) > 0 {
-        number_of_commits += commits.iter().count();
+        number_of_commits += commits.len();
         number_of_cs += commits.iter().fold(0, |acc, commit| {
             acc + commit
                 .to_string()
@@ -120,18 +120,22 @@ fn main() {
                 println!("got {len} blame entries", len = blame.len());
             }
             Library::Gix => {
-                let repo: gix::Repository =
+                let mut repo: gix::Repository =
                     gix::ThreadSafeRepository::discover_with_environment_overrides(".")
                         .map(Into::into)
                         .unwrap();
+
+                let index = repo.index_or_empty().unwrap();
+                repo.object_cache_size_if_unset(
+                    repo.compute_object_cache_size_for_tree_diffs(&index),
+                );
 
                 println!(
                     "using `gix` to get blame for {path:?} (in {workdir:?})",
                     workdir = repo.workdir().unwrap()
                 );
 
-                let head_id: gix::ObjectId =
-                    repo.head().unwrap().peel_to_commit_in_place().unwrap().id;
+                let head_id: gix::ObjectId = repo.head().unwrap().peel_to_commit().unwrap().id;
 
                 let cache: Option<gix::commitgraph::Graph> =
                     repo.commit_graph_if_enabled().unwrap();
@@ -141,13 +145,15 @@ fn main() {
 
                 let options = gix_blame::Options {
                     diff_algorithm,
-                    range: None,
+                    ranges: gix_blame::BlameRanges::default(),
                     since: None,
+                    rewrites: Some(gix::diff::Rewrites::default()),
+                    debug_track_path: false,
                 };
 
                 let outcome = gix_blame::file(
                     &repo.objects,
-                    head_id.into(),
+                    head_id,
                     cache,
                     &mut resource_cache,
                     (&path as &str).into(),

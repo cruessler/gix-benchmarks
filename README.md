@@ -1,3 +1,40 @@
+# 2025-12-21
+
+Results of comparing `gix-benchmarks blame gix` with `gix-blame` 0.1 vs.
+`gix-benchmarks blame gix` with `gix-blame` 0.5. There doesn’t seem to be a
+difference at all. This is with both versions of `gix-blame` using `imara-diff`
+0.1 under the hood. In the future, I’ll add benchmarks for a version of
+`gix-blame` that uses `imara-diff` 0.2.
+
+Note: in `gix-blame` 0.2 and 0.3, there was a performance regression caused by
+[this commit][commit-96164c5] and resolved by [this commit][commit-8dc5e98].
+See [this issue][issue-2148] and [this PR][pr-2154] for context.
+
+[commit-96164c5]: https://github.com/GitoxideLabs/gitoxide/commit/96164c5936032b4edb973828178cc55793dd57cc
+[commit-8dc5e98]: https://github.com/GitoxideLabs/gitoxide/commit/8dc5e98d9dfe1fdbbd9db15ea149f253c9aaad0e
+[pr-2154]: https://github.com/GitoxideLabs/gitoxide/pull/2154
+[issue-2148]: https://github.com/GitoxideLabs/gitoxide/issues/2148
+
+```
+❯ env GIT_DIR="$HOME/github/Byron/gitoxide/.git" hyperfine --warmup 1 --export-markdown results.md 'gix-benchmarks@v0.1.0 blame --path Cargo.toml gix' 'gix-benchmarks@v0.5.0 blame --path Cargo.toml gix'
+Benchmark 1: gix-benchmarks@v0.1.0 blame --path Cargo.toml gix
+  Time (mean ± σ):      64.5 ms ±   1.3 ms    [User: 54.5 ms, System: 9.5 ms]
+  Range (min … max):    62.4 ms …  67.8 ms    45 runs
+
+Benchmark 2: gix-benchmarks@v0.5.0 blame --path Cargo.toml gix
+  Time (mean ± σ):      64.5 ms ±   2.0 ms    [User: 53.9 ms, System: 10.2 ms]
+  Range (min … max):    61.3 ms …  71.7 ms    45 runs
+
+Summary
+  gix-benchmarks@v0.1.0 blame --path Cargo.toml gix ran
+    1.00 ± 0.04 times faster than gix-benchmarks@v0.5.0 blame --path Cargo.toml gix
+```
+
+| Command | Mean [ms] | Min [ms] | Max [ms] | Relative |
+|:---|---:|---:|---:|---:|
+| `gix-benchmarks@v0.1.0 blame --path Cargo.toml gix` | 64.5 ± 1.3 | 62.4 | 67.8 | 1.00 |
+| `gix-benchmarks@v0.5.0 blame --path Cargo.toml gix` | 64.5 ± 2.0 | 61.3 | 71.7 | 1.00 ± 0.04 |
+
 # 2025-04-09
 
 Results of comparing a patched version of `git rev-list` vs. `gix-benchmarks log gix`, i. e. traversing a repository’s entire history chronologically using either `gix` (as a library) or `git` (as a patched standalone binary). The [patch][patch] makes `git rev-list` do roughly what the other benchmarks do: traverse the entire history of a repository, counting the number of `c`s in commit hashes as a checksum. Applying the patch on top of 5b97a56fa0e7d580dc8865b73107407c9b3f0eff and running the benchmark yields the following results.
