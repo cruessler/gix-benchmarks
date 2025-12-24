@@ -1,0 +1,28 @@
+on: push
+
+name: Test and build
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        rust: [ stable ]
+
+    name: ${{ matrix.os }}, Rust ${{ matrix.rust }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Check formatting
+      run: cargo fmt -- --check
+
+    - name: Run clippy
+      run: cargo clippy
+
+    - name: Test
+      run: cargo test
+
+    - name: Build (release)
+      run: cargo build --release
