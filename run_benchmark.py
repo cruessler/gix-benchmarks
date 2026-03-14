@@ -3,7 +3,7 @@
 # requires-python = ">=3.13"
 # ///
 
-# env GIT_DIR="$HOME/github/Byron/gitoxide/.git" BASELINE_EXECUTABLE="$HOME/bin/gix-blame-2026-03-08-29040a827" COMPARISON_EXECUTABLE="/home/christoph/bin/gix-blame-2026-03-08-e63d487fb" ./run_benchmark.py
+# env GIT_DIR="$HOME/github/Byron/gitoxide/.git" BASELINE_EXECUTABLE="$HOME/bin/gix-blame-2026-03-08-29040a827" COMPARISON_EXECUTABLE="$HOME/bin/gix-blame-2026-03-08-e63d487fb" ./run_benchmark.py
 
 import os
 
