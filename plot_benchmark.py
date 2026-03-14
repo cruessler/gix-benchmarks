@@ -44,7 +44,7 @@ data = pd.concat(
 )
 
 FIGURE_WIDTH = 10
-FIGURE_ASPECT = 2
+FIGURE_ASPECT = 1.6
 
 sns.set_theme(
     palette="pastel",
