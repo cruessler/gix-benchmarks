@@ -47,25 +47,20 @@ FIGURE_WIDTH = 10
 FIGURE_ASPECT = 1.6
 
 sns.set_theme(
-    palette="pastel",
+    palette="Paired",
     rc={"figure.figsize": (FIGURE_WIDTH, FIGURE_WIDTH / FIGURE_ASPECT)},
 )
 
-boxplot = sns.boxplot(
-    x="time", y="filename", hue="commit", palette=["m", "g"], data=data
-)
+boxplot = sns.boxplot(x="time", y="filename", hue="commit", data=data)
 sns.despine(offset=10, trim=True)
 mpl.pyplot.tight_layout()
 
 boxplot.get_figure().savefig("boxplot.webp")
 
-sns.set_theme(palette="muted")
-
 catplot = sns.catplot(
     x="time",
     y="filename",
     hue="commit",
-    palette=["m", "g"],
     legend_out=False,
     height=FIGURE_WIDTH / FIGURE_ASPECT,
     aspect=FIGURE_ASPECT,
