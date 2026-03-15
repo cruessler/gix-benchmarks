@@ -28,12 +28,9 @@ results = [load_results(filename) for filename in filenames]
 
 def extract_data_points(result):
     command = result["command"]
-    parts = command.split(" ")
-    filename = parts[-1]
+    path = result["parameters"]["path"]
 
-    commit = parts[0].split("/")[-1].split("-")[-1]
-
-    return {"commit": commit, "filename": filename, "time": result["times"]}
+    return {"command": command, "path": path, "time": result["times"]}
 
 
 results = [extract_data_points(result) for result in np.concatenate(results)]
@@ -51,7 +48,7 @@ sns.set_theme(
     rc={"figure.figsize": (FIGURE_WIDTH, FIGURE_WIDTH / FIGURE_ASPECT)},
 )
 
-boxplot = sns.boxplot(x="time", y="filename", hue="commit", data=data)
+boxplot = sns.boxplot(x="time", y="path", hue="command", data=data)
 sns.despine(offset=10, trim=True)
 mpl.pyplot.tight_layout()
 
@@ -59,8 +56,8 @@ boxplot.get_figure().savefig("boxplot.webp")
 
 catplot = sns.catplot(
     x="time",
-    y="filename",
-    hue="commit",
+    y="path",
+    hue="command",
     legend_out=False,
     height=FIGURE_WIDTH / FIGURE_ASPECT,
     aspect=FIGURE_ASPECT,
