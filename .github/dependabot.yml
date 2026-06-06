@@ -7,6 +7,9 @@ updates:
       interval: monthly
       day: thursday
 
+    assignees:
+      - "cruessler"
+
     cooldown:
       default-days: 7
 
@@ -16,6 +19,9 @@ updates:
     schedule:
       interval: monthly
       day: thursday
+
+    assignees:
+      - "cruessler"
 
     cooldown:
       default-days: 7
